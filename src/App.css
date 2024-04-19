@@ -1,0 +1,60 @@
+:root {
+    --font_heading:24px;
+    --font_subheding:16px;
+    --font_normal:12px;
+}
+
+.fh{
+    font-size: var(--font_heading);
+    font-weight: bold;
+}
+
+.fsh{
+    font-size: var(--font_subheading);
+    font-weight: bold;
+}
+
+.fn{
+    font-size: var(--font_normal);
+    font-weight: lighter;
+}
+
+.form_section{
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+}
+
+.form_section form{
+    background-color: white;
+    padding: 25px;
+    border-radius: 8px;
+}
+
+form .label{
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+form .label input{
+    padding: 3px;
+}
+
+form button {
+    padding: 2px 5px;
+}
+
+.reg_nav{
+    position: relative;
+}
+
+.reg_nav a{
+    position:absolute;
+    top: 0;
+    left: 0;
+    transform: translate(-50%, 500%);
+}
