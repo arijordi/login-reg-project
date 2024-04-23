@@ -1,8 +1,11 @@
 const http = require('http');
 const {Client} = require('pg');
+const fs = require('fs');
+const lookup = require('mime-types').lookup;
+const {parse} = require('url');
 
 function dbConn(){
-    const client = new Client({
+    const dbClient = new Client({
         user:'ari',
         host:'127.0.0.1',
         database:'api',
@@ -10,22 +13,14 @@ function dbConn(){
         port:'5432',
     });
 
-    const sql='SELECT * FROM users';
-    /*`INSERT INTO users (username, email, password) 
-    VALUES ('user2', 'user2@mail.com', 'user123')`;*/
-
-    client.connect((err)=>{
+    dbClient.connect((err)=>{
         if(err) throw err;
-        console.log('connected');
-
-        client.query(sql,(err, res)=>{
-            if(err) throw err;
-            console.log(`Result : ${JSON.stringify(res)}`);
-        });
+        console.log('conn');
+        return dbClient;
     })
 }
 
-async function createUser(req, res){
+async function createUser(req, res, dbClient){
     const data = new Promise((res, rej)=>{
         try{
             let body='';
@@ -45,23 +40,26 @@ async function createUser(req, res){
     try{
         const body = await data;
         const {username, email, password} = JSON.parse(body);
-        const user={
-            username,
-            email,
-            password
-        }
+        
+        const sql=`INSERT INTO users 
+        (username, email, password) VALUES 
+        (${username}, ${email}, ${password})`;
+
+        dbClient.query(sql,(err, result)=>{
+            if(err) throw err;
+            res.writeHead(200,{'Content-Type':'application/json'});
+            res.end(JSON.stringify({username:`${username}`}));
+            //console.log(`Result : ${JSON.stringify(result)}`);
+        });
     }catch(err){
         console.log(err);
     }
 }
 
-const server = http.createServer((req, res)=>{
-
-    dbConn();
-
+function ctrlAPI(req, res){
     if(req.url === '/api/users' && req.method === 'POST'){
         //reg
-        createUser(req,res);
+        createUser(req,res, dbClient);
     }
     /*else if(req.url === '/api/users/login' && req.method === 'POST'){
         //login
@@ -80,8 +78,44 @@ const server = http.createServer((req, res)=>{
             {message:'Route Not Found'}
         ));
     }
+}
 
+const server = http.createServer((req, res)=>{
+        //looks like read client file need work
+        //handle mime type for any dir file it directed to
+        let url = parse(req.url,true);
+        url = url.path.replace(/^\/+|\/+$/g, '');
+        const urlSplited = url.split('/');
+        let fileName = urlSplited[urlSplited.length - 1];
+        
+        if(fileName === '') {
+            fileName = 'index.html';
+            url = fileName;
+        }
+         
+
+        const fpath = `${__dirname}/../../client/dist/${url}`
+        console.log(url);
+        fs.readFile(fpath, (err, d)=>{
+            if(err){
+                res.writeHead(404);
+                res.end()
+            }else{
+                const mime = lookup(fileName);
+                console.log(`mime : ${mime}`);
+                res.writeHead(200, {'Content-Type':mime})
+                res.end(d); 
+            }
+        })
+
+        console.log(`res :: ${fileName}, ${fpath}`);
     
+    /*
+    const dbClient = dbConn();
+
+    if(dbClient){
+        ctrlAPI(req, res, dbClient);
+    }*/
 })
 
 module.exports = {server};
