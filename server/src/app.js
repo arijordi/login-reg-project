@@ -3,8 +3,9 @@ const {Client} = require('pg');
 const fs = require('fs');
 const lookup = require('mime-types').lookup;
 const {parse} = require('url');
+const { error } = require('console');
 
-function dbConn(){
+const db = (()=>{
     const dbClient = new Client({
         user:'ari',
         host:'127.0.0.1',
@@ -15,12 +16,14 @@ function dbConn(){
 
     dbClient.connect((err)=>{
         if(err) throw err;
-        console.log('conn');
-        return dbClient;
-    })
-}
+        //if(dbClient)console.log(`dbConn : ${JSON.stringify(dbClient)}`);
+    });
+
+    return dbClient;
+})();
 
 async function createUser(req, res, dbClient){
+   
     const data = new Promise((res, rej)=>{
         try{
             let body='';
@@ -39,27 +42,50 @@ async function createUser(req, res, dbClient){
 
     try{
         const body = await data;
+        console.log(`body : ${body}`);
         const {username, email, password} = JSON.parse(body);
         
+        console.log(`${username}, ${email}, ${password}`);
         const sql=`INSERT INTO users 
         (username, email, password) VALUES 
-        (${username}, ${email}, ${password})`;
+        ('${username}','${email}','${password}')`;
 
         dbClient.query(sql,(err, result)=>{
             if(err) throw err;
-            res.writeHead(200,{'Content-Type':'application/json'});
-            res.end(JSON.stringify({username:`${username}`}));
-            //console.log(`Result : ${JSON.stringify(result)}`);
+            res.writeHead(200,{
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Origin':'http://localhost:3001'
+            });
+            res.end(JSON.stringify({
+                data:{
+                    username:`${username}`,
+                    email:`${email}`
+                }
+            }));
+            console.log(`Result : ${JSON.stringify(result.rowCount)}`);
         });
     }catch(err){
         console.log(err);
+        res.writeHead(400,{'Content-Type':'application/json'});
+        res.end(JSON.stringify({
+            errors:"something wrong please try again!"
+        }));
     }
 }
 
-function ctrlAPI(req, res){
-    if(req.url === '/api/users' && req.method === 'POST'){
+function ctrlAPI(req, res, dbClient){
+    console.log(`${req.url}, ${req.method}`);
+    if(req.method === 'OPTIONS'){
+        res.writeHead(200,{
+            'Access-Control-Allow-Origin':'http://localhost:3001',
+            'Access-Control-Allow-Methods':'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers':'Content-Type, Authorization',
+            'Access-Control-Allow-Credentials':'true',
+        });
+        res.end();
+    }else if(req.url === '/api/users' && req.method === 'POST'){
         //reg
-        createUser(req,res, dbClient);
+        createUser(req, res, dbClient);
     }
     /*else if(req.url === '/api/users/login' && req.method === 'POST'){
         //login
@@ -80,42 +106,50 @@ function ctrlAPI(req, res){
     }
 }
 
-const server = http.createServer((req, res)=>{
-        //looks like read client file need work
-        //handle mime type for any dir file it directed to
-        let url = parse(req.url,true);
-        url = url.path.replace(/^\/+|\/+$/g, '');
-        const urlSplited = url.split('/');
-        let fileName = urlSplited[urlSplited.length - 1];
-        
-        if(fileName === '') {
-            fileName = 'index.html';
-            url = fileName;
-        }
-         
-
-        const fpath = `${__dirname}/../../client/dist/${url}`
-        console.log(url);
-        fs.readFile(fpath, (err, d)=>{
-            if(err){
-                res.writeHead(404);
-                res.end()
-            }else{
-                const mime = lookup(fileName);
-                console.log(`mime : ${mime}`);
-                res.writeHead(200, {'Content-Type':mime})
-                res.end(d); 
-            }
-        })
-
-        console.log(`res :: ${fileName}, ${fpath}`);
+const serverPage = http.createServer((req, res)=>{
+    let url = parse(req.url,true);
+    url = url.path.replace(/^\/+|\/+$/g, '');
+    const urlSplited = url.split('/');
+    let fileName = urlSplited[urlSplited.length - 1];
     
-    /*
-    const dbClient = dbConn();
+    if(fileName === '') {
+        fileName = 'index.html';
+        url = fileName;
+    }
+        
+    const fpath = `${__dirname}/../../client/dist/${url}`
 
-    if(dbClient){
-        ctrlAPI(req, res, dbClient);
-    }*/
+    fs.readFile(fpath, (err, d)=>{
+        if(err){
+            res.writeHead(404);
+            res.end()
+        }else{
+            const mime = lookup(fileName);
+            res.writeHead(200, {'Content-Type':mime})
+            res.end(d); 
+        }
+    })
 })
 
-module.exports = {server};
+const serverAPI = http.createServer((req, res)=>{
+    let tLimit;
+
+    tLimit = setTimeout(()=>{
+        console.log(`DB connect took long... Fail!`);
+        clearTimeout(tLimit);
+        res.writeHead(404, {'Content-Type':'application/json'});
+        res.end(JSON.stringify(
+            {message:'something wrong'}
+        ));
+    }, 3000);
+   
+    if(db){
+        clearTimeout(tLimit);
+        const dbClient = db;
+        //console.log(`connected : ${JSON.stringify(dbClient)}`);
+        
+        ctrlAPI(req, res, dbClient);
+    }
+})
+
+module.exports = {serverPage, serverAPI};

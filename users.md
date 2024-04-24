@@ -8,8 +8,9 @@ Request Body :
 
 ```json
 {
-    "name":"ari jordi",
+
     "username":"ari",
+    "email":"ari@mail.com",
     "password":"pass123"
 }
 ```
@@ -20,7 +21,7 @@ Response Body Success:
 {
     "data":{
         "username":"ari",
-        "name":"ari jordi"
+        "email":"ari@mail.com"
     }
 }
 ```
@@ -44,7 +45,7 @@ Request Body:
 
 ```json
 {
-    "username":"ari",
+    "email":"ari@mail.com",
     "password":"pass123"
 }
 ```
@@ -76,7 +77,7 @@ Headers:
 Request Body:
 ```json
 {
-    "name":"new",//optional
+    "username":"new",//optional
     "password":"newpass123"//optional
 }
 ```
@@ -84,7 +85,6 @@ Request Body:
 Response Body Success:
 ```json
 {
-    "name":"ari jordi",
     "username":"new"
 }
 ```
@@ -108,7 +108,6 @@ Response Body Success:
 ```json
 {
     "data":{
-        "name":"ari jordi",
         "username":"new"
     }
     

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import './App.css'
 
+
 function Reglayout(){
   const[user, setuser] = useState({
     username:"",
@@ -12,17 +13,27 @@ function Reglayout(){
   return (
     <>
       <section className='form_section'>
-        <form onSubmit={(e)=>{e.preventDefault;  
-          alert(`username:${user.username}\nemail:${user.email}\npassword:${user.password}`);
-          /*fetch POST
-          fetch('https://www.example.com/submit-form', {
-              method: 'POST', // Specify the HTTP method
-              body: new FormData(document.querySelector('form')) // Collect form data
-            })
+        <form onSubmit={(e)=>{
+          e.preventDefault();  
+
+          const body = {
+            username:user.username,
+            email:user.email,
+            password:user.password
+          }
+
+          fetch("http://localhost:1234/api/users", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(body)
+          })
           .then(response => response.text()) // Read response as text
-          .then(data => alert(data)); // Alert the response
-          */ 
-          }}>
+          .then(data => console.log(data)); // Alert the response
+          
+        }}>
+
           <label className='username label fn'>
             <span>username:</span>
             <input type="text" placeholder='username' required 
@@ -41,7 +52,9 @@ function Reglayout(){
             onChange={(e)=>{setuser(prevState =>{return { ...prevState, password:e.target.value}})}}/>
           </label>
 
-          <button type='submit' className='fn'>register</button>
+          <button type='submit' className='fn'>
+            register
+          </button>
         </form>
         <div className='reg_nav'>
           <Link className='fn' to='/'>login</Link>
@@ -53,7 +66,7 @@ function Reglayout(){
 
 function LoginLayout(){
   const[user, setuser] = useState({
-    username:"",
+    email:"",
     password:""
   });
 
@@ -71,10 +84,10 @@ function LoginLayout(){
           .then(data => alert(data)); // Alert the response
           */ 
           }}>
-          <label className='username label fn'>
-            <span>username:</span>
-            <input type="text" placeholder='username' required 
-            onChange={(e)=>{setuser(prevState =>{return { ...prevState, username:e.target.value}})}}/>
+          <label className='email label fn'>
+            <span>email:</span>
+            <input type="email" placeholder='example@mail.com' required 
+            onChange={(e)=>{setuser(prevState =>{return { ...prevState, email:e.target.value}})}}/>
           </label>
 
           <label className='password label fn'>
