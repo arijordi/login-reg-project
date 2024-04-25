@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link} from 'react-router-dom'
 import './App.css'
 
 
@@ -20,18 +20,18 @@ function Reglayout(){
             username:user.username,
             email:user.email,
             password:user.password
-          }
+          };
 
           fetch("http://localhost:1234/api/users", {
               method: "POST",
               headers: {
-                "Content-Type": "application/json",
+                "Content-Type": "application/json"
               },
               body: JSON.stringify(body)
           })
-          .then(response => response.text()) // Read response as text
-          .then(data => console.log(data)); // Alert the response
-          
+          .then(response => response.text()) 
+          .then(data => {console.log(data);
+            window.location.href = 'http://localhost:3001/';});
         }}>
 
           <label className='username label fn'>
@@ -73,17 +73,25 @@ function LoginLayout(){
   return (
     <>
       <section className='form_section'>
-        <form onSubmit={(e)=>{e.preventDefault;  
-          alert(`username:${user.username}\npassword:${user.password}`);
-          /*fetch POST
-          fetch('https://www.example.com/submit-form', {
-              method: 'POST', // Specify the HTTP method
-              body: new FormData(document.querySelector('form')) // Collect form data
-            })
-          .then(response => response.text()) // Read response as text
-          .then(data => alert(data)); // Alert the response
-          */ 
+        <form onSubmit={(e)=>{
+          e.preventDefault();  
+
+          const body = {
+            email:user.email,
+            password:user.password
+          }
+
+          fetch("http://localhost:1234/api/users/login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify(body)
+          })
+          .then(response => response.text()) 
+          .then(data => console.log(data));
           }}>
+
           <label className='email label fn'>
             <span>email:</span>
             <input type="email" placeholder='example@mail.com' required 
