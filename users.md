@@ -108,9 +108,9 @@ Response Body Success:
 ```json
 {
     "data":{
-        "username":"new"
+        "username":"new",
+        "email":"new"
     }
-    
 }
 ```
 

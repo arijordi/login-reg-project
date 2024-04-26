@@ -28,7 +28,7 @@
     align-items: center;
 }
 
-.form_section form{
+.form_section form, .form_section .container{
     background-color: white;
     padding: 25px;
     border-radius: 8px;
@@ -58,3 +58,22 @@ form button {
     left: 0;
     transform: translate(-50%, 500%);
 }
+
+.container .conf{
+    display: flex;
+    flex-direction: column;
+    margin-top: 15px;
+}
+
+.container .user{
+    margin-bottom: 5px;
+}
+
+.container .link > button{
+    width: 100%;
+}
+
+.container .edit{
+    margin-bottom: 5px;
+}
+

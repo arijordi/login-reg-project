@@ -111,15 +111,18 @@ async function accessUser(req, res, dbClient){
             ${JSON.stringify(result.rowCount)}`);
 
             const row = result.rows[0];
-            //now work with JWT & bycrpt
 
             if(row.password === password)
             {
+                //prepare jwt
+
+                //send token using httponly cookie
                 res.writeHead(200,{
                     'Content-Type':'application/json',
                     'Access-Control-Allow-Origin':'http://localhost:3001'
                 });
-    
+                
+                //send jwt
                 res.end(JSON.stringify({
                     data:{
                         token:`temp-token-${row.username}`,

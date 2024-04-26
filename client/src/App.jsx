@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Link} from 'react-router-dom'
 import './App.css'
 
 
+let username='';
+
 function Reglayout(){
   const[user, setuser] = useState({
     username:"",
@@ -114,12 +116,121 @@ function LoginLayout(){
   )
 }
 
+function ContentLayout(){
+  const[user, setuser] = useState({
+    username:"",
+    email:""
+  });
+
+  useEffect(() => {
+    fetch("http://localhost:1234/api/users/current", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization":"-"
+        }
+    })
+    .then(response => response.text()) 
+    .then(data => {
+      
+      setuser(prevState =>{
+        return { 
+          ...prevState, 
+          username:data.username, 
+          email:data.email
+        }
+      })
+
+      username = data.username;
+
+      console.log(data)
+    });
+  }, []);
+
+  return(
+    <>
+      <section className='form_section'>
+        <div className='container fn'>
+          <div className='user name'>
+            <p>username : {user.username}</p>
+          </div>
+          <div className='user email'>
+            <p>email : {user.email}</p>
+          </div>
+          <div className='conf'>
+            <Link className='link edit fn' to='/user/edit'>
+              <button>edit user</button>
+            </Link>
+            
+            <button className='edit'>delete user</button>
+            <button className='edit'>log out</button>
+          </div>
+        </div>
+      </section>
+    </>
+  )
+}
+
+function Editlayout(){
+
+  return (
+    <>
+      <section className='form_section'>
+        
+        <form onSubmit={(e)=>{
+          e.preventDefault();  
+
+          const body = {
+            username:username
+          };
+          
+          fetch("http://localhost:1234/api/users/current", {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization":"-"
+              },
+              body: JSON.stringify(body)
+          })
+          .then(response => response.text()) 
+          .then(data => {
+            console.log(data);
+            window.location.href = 'http://localhost:3001/content';
+          });
+          }}>
+
+          <label className='username label fn'>
+            <span>old username:</span>
+            <input type="text" value={username} disabled
+            onChange={(e)=>{setuser(prevState =>{return { ...prevState, username:e.target.value}})}}/>
+          </label>
+
+          <label className='username label fn'>
+            <span>new username:</span>
+            <input type="text" placeholder='new username' required 
+            onChange={(e)=>{setuser(prevState =>{return { ...prevState, username:e.target.value}})}}/>
+          </label>
+
+          <button type='submit' className='fn'>
+            Submit
+          </button>
+        </form>
+        <div className='edit_nav'>
+          <Link className='fn' to='/content'>back</Link>
+        </div>
+      </section>
+    </>
+  )
+}
+
 function App() {
   return (
     <BrowserRouter>
         <Routes>
           <Route exact path="/" element={<LoginLayout />} />
           <Route path="/register" element={<Reglayout />} />
+          <Route path="/user/edit" element={<Editlayout />} />
+          <Route path="/content" element={<ContentLayout />} />
        </Routes>
     </BrowserRouter>
   )
