@@ -114,9 +114,9 @@ async function accessUser(req, res, dbClient){
 
             if(row.password === password)
             {
-                //prepare jwt
+                //prepare refresh and access token
 
-                //send token using httponly cookie
+                //send refresh token using httponly
                 res.writeHead(200,{
                     'Content-Type':'application/json',
                     'Access-Control-Allow-Origin':'http://localhost:3001',
@@ -124,10 +124,10 @@ async function accessUser(req, res, dbClient){
                     'Set-Cookie':`myCookie=temp-token-${row.username};expires=${new Date(Date.now() + 600000).toUTCString()};HttpOnly;Path="/";SameSite=None;Secure`
                 });
                 
-                //send jwt
+                //send access token
                 res.end(JSON.stringify({
                     data:{
-                        token:`temp-token-${row.username}`,
+                        success:true,
                     }
                 }));
             }else throw err;
@@ -148,71 +148,46 @@ async function accessUser(req, res, dbClient){
 
 
 async function getUser(req, res, dbClient){
-
-    //validate token
-    const token = req.headers.cookie;
-    console.log(token);
-
-    try{
-        res.writeHead(200,{
-            'Content-Type':'application/json',
-            'Access-Control-Allow-Origin':'http://localhost:3001',
-            'Access-Control-Allow-Credentials':'true',
-        });
-        
-        //send jwt
-        res.end(JSON.stringify({
-            data:{
-                success:`test only ${req.headers.cookie}`,
-            }
-        }));
-    }catch(err){
-        console.log(`catch :: ${err}`);
-        res.writeHead(400,{
-            'Content-Type':'application/json',
-            'Access-Control-Allow-Origin':'http://localhost:3001',
-            'Access-Control-Allow-Credentials':'true',
-        });
-        res.end(JSON.stringify({
-            errors:"something went wrong!"
-        }));
-    }
-   
-
-    //query if t
-    //err if f
-
-    /*
+    //TEMPORARY FOR TEST ONLY, DELETE LATER!!
+    const email = "test123@mail.com"
+    
+    //sql 
     const sql=`SELECT * FROM 
     users WHERE email='${email}'`;
 
+    //query
     dbClient.query(sql,(err, result)=>{
         try{
+            const token = req.headers.cookie;
+
+            //validate token
+            if(!token && token != "temp-token-test123") throw err;
+
             if(err | !result.rowCount) throw err;
 
             console.log(`Result : 
-            ${JSON.stringify(result.rowCount)}`);
+            ${JSON.stringify(result.rowCount)},
+            ${JSON.stringify(result.rows[0])}`);
 
             const row = result.rows[0];
+            
+            //token decode
+            //get token username & email credential
 
-            if(row.password === password)
-            {
-                //prepare jwt
-
-                //send token using httponly cookie
-                res.writeHead(200,{
-                    'Content-Type':'application/json',
-                    'Access-Control-Allow-Origin':'http://localhost:3001',
-                    'Set-Cookie':`myCookie=temp-token-${row.username}; HttpOnly`
-                });
-                
-                //send jwt
-                res.end(JSON.stringify({
-                    data:{
-                        token:`temp-token-${row.username}`,
-                    }
-                }));
-            }else throw err;
+            //send token using httponly cookie
+            res.writeHead(200,{
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Origin':'http://localhost:3001',
+                'Access-Control-Allow-Credentials':'true',
+            });
+            
+            //send jwt
+            res.end(JSON.stringify({
+                data:{
+                    username:`${row.username}`,
+                    email:`${row.email}`,
+                }
+            }));
 
         }catch(err){
             console.log(`catch :: ${err}`);
@@ -221,13 +196,10 @@ async function getUser(req, res, dbClient){
                 'Access-Control-Allow-Origin':'http://localhost:3001'
             });
             res.end(JSON.stringify({
-                errors:"username or password wrong!"
+                errors:"Unauthorized"
             }));
         }
-        
-        
-    });
-    */
+    })
 }
 
 function ctrlAPI(req, res, dbClient){
@@ -241,15 +213,10 @@ function ctrlAPI(req, res, dbClient){
         });
         res.end();
     }else if(req.url === '/api/users' && req.method === 'POST'){
-        //reg
-        console.log('tst');
         createUser(req, res, dbClient);
-    }
-    else if(req.url === '/api/users/login' && req.method === 'POST'){
-        //login
+    }else if(req.url === '/api/users/login' && req.method === 'POST'){
         accessUser(req, res, dbClient);
-    }else if(req.url === '/api/users/current' && req.method === 'POST'){
-        //get
+    }else if(req.url === '/api/users/current' && req.method === 'GET'){
         getUser(req, res, dbClient);
     }/*else if(req.url === '/api/users/current' && req.method === 'PATCH'){
         //update

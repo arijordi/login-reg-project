@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Link, useNavigate} from 'react-router-dom'
 import './App.css'
 
@@ -97,7 +97,7 @@ function LoginLayout(){
           })
           .then(response => response.text()) 
           .then(data => {
-            console.log(data);
+            console.log(data); 
             navigate('/content');
           });
           }}>
@@ -131,40 +131,30 @@ function ContentLayout(){
     email:"test@mail.com"
   });
   
-  fetch("http://localhost:1234/api/users/current", {
-      method: "POST",
+  useEffect(() => {
+    fetch("http://localhost:1234/api/users/current", {
+      method: "GET",
       mode:"cors",
       credentials:"include",
       headers: {
         "Content-Type": "application/json",
         "withCredentials":"true"
       },
-      
-      body:''
-  })
-  .then(response => response.text()) 
-  .then(data => console.log(data));
-
-  /*
-  useEffect(() => {
-   
-    
+    })
     .then(response => response.text()) 
-    .then(data => {
-      /*
+    .then(d => {
+      const dparsed = JSON.parse(d);
+      
       setuser(prevState =>{
         return { 
           ...prevState, 
-          username:data.username, 
-          email:data.email
+          username:dparsed.data.username, 
+          email:dparsed.data.email
         }
-      })
-
-      username = data.username;
+      });
       
-      console.log(data)
     });
-  }, []);*/
+  }, []);
 
   return(
     <>
