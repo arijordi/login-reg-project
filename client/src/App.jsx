@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { BrowserRouter, Routes, Route, Link} from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, useNavigate} from 'react-router-dom'
 import './App.css'
 
 
@@ -33,7 +33,7 @@ function Reglayout(){
           })
           .then(response => response.text()) 
           .then(data => {console.log(data);
-            window.location.href = 'http://localhost:3001/';});
+          navigate('/');});
         }}>
 
           <label className='username label fn'>
@@ -72,6 +72,8 @@ function LoginLayout(){
     password:""
   });
 
+  const navigate = useNavigate();
+
   return (
     <>
       <section className='form_section'>
@@ -85,13 +87,19 @@ function LoginLayout(){
 
           fetch("http://localhost:1234/api/users/login", {
               method: "POST",
+              mode:"cors",
+              credentials:"include",
               headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "withCredentials":"true"
               },
               body: JSON.stringify(body)
           })
           .then(response => response.text()) 
-          .then(data => console.log(data));
+          .then(data => {
+            console.log(data);
+            navigate('/content');
+          });
           }}>
 
           <label className='email label fn'>
@@ -113,26 +121,37 @@ function LoginLayout(){
         </div>
       </section>
     </>
+
   )
 }
 
 function ContentLayout(){
   const[user, setuser] = useState({
-    username:"",
-    email:""
+    username:"test",
+    email:"test@mail.com"
   });
+  
+  fetch("http://localhost:1234/api/users/current", {
+      method: "POST",
+      mode:"cors",
+      credentials:"include",
+      headers: {
+        "Content-Type": "application/json",
+        "withCredentials":"true"
+      },
+      
+      body:''
+  })
+  .then(response => response.text()) 
+  .then(data => console.log(data));
 
+  /*
   useEffect(() => {
-    fetch("http://localhost:1234/api/users/current", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization":"-"
-        }
-    })
+   
+    
     .then(response => response.text()) 
     .then(data => {
-      
+      /*
       setuser(prevState =>{
         return { 
           ...prevState, 
@@ -142,10 +161,10 @@ function ContentLayout(){
       })
 
       username = data.username;
-
+      
       console.log(data)
     });
-  }, []);
+  }, []);*/
 
   return(
     <>
@@ -186,16 +205,17 @@ function Editlayout(){
           
           fetch("http://localhost:1234/api/users/current", {
               method: "PATCH",
+              credentials:"include",
               headers: {
                 "Content-Type": "application/json",
-                "Authorization":"-"
+                "withCredentials":"true",
               },
               body: JSON.stringify(body)
           })
           .then(response => response.text()) 
           .then(data => {
             console.log(data);
-            window.location.href = 'http://localhost:3001/content';
+            navigate('/content');
           });
           }}>
 
@@ -227,7 +247,7 @@ function App() {
   return (
     <BrowserRouter>
         <Routes>
-          <Route exact path="/" element={<LoginLayout />} />
+          <Route path="/" element={<LoginLayout />} />
           <Route path="/register" element={<Reglayout />} />
           <Route path="/user/edit" element={<Editlayout />} />
           <Route path="/content" element={<ContentLayout />} />

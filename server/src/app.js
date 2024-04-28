@@ -119,7 +119,9 @@ async function accessUser(req, res, dbClient){
                 //send token using httponly cookie
                 res.writeHead(200,{
                     'Content-Type':'application/json',
-                    'Access-Control-Allow-Origin':'http://localhost:3001'
+                    'Access-Control-Allow-Origin':'http://localhost:3001',
+                    'Access-Control-Allow-Credentials':'true',
+                    'Set-Cookie':`myCookie=temp-token-${row.username};expires=${new Date(Date.now() + 600000).toUTCString()};HttpOnly;Path="/";SameSite=None;Secure`
                 });
                 
                 //send jwt
@@ -144,13 +146,97 @@ async function accessUser(req, res, dbClient){
     });
 }
 
+
+async function getUser(req, res, dbClient){
+
+    //validate token
+    const token = req.headers.cookie;
+    console.log(token);
+
+    try{
+        res.writeHead(200,{
+            'Content-Type':'application/json',
+            'Access-Control-Allow-Origin':'http://localhost:3001',
+            'Access-Control-Allow-Credentials':'true',
+        });
+        
+        //send jwt
+        res.end(JSON.stringify({
+            data:{
+                success:`test only ${req.headers.cookie}`,
+            }
+        }));
+    }catch(err){
+        console.log(`catch :: ${err}`);
+        res.writeHead(400,{
+            'Content-Type':'application/json',
+            'Access-Control-Allow-Origin':'http://localhost:3001',
+            'Access-Control-Allow-Credentials':'true',
+        });
+        res.end(JSON.stringify({
+            errors:"something went wrong!"
+        }));
+    }
+   
+
+    //query if t
+    //err if f
+
+    /*
+    const sql=`SELECT * FROM 
+    users WHERE email='${email}'`;
+
+    dbClient.query(sql,(err, result)=>{
+        try{
+            if(err | !result.rowCount) throw err;
+
+            console.log(`Result : 
+            ${JSON.stringify(result.rowCount)}`);
+
+            const row = result.rows[0];
+
+            if(row.password === password)
+            {
+                //prepare jwt
+
+                //send token using httponly cookie
+                res.writeHead(200,{
+                    'Content-Type':'application/json',
+                    'Access-Control-Allow-Origin':'http://localhost:3001',
+                    'Set-Cookie':`myCookie=temp-token-${row.username}; HttpOnly`
+                });
+                
+                //send jwt
+                res.end(JSON.stringify({
+                    data:{
+                        token:`temp-token-${row.username}`,
+                    }
+                }));
+            }else throw err;
+
+        }catch(err){
+            console.log(`catch :: ${err}`);
+            res.writeHead(400,{
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Origin':'http://localhost:3001'
+            });
+            res.end(JSON.stringify({
+                errors:"username or password wrong!"
+            }));
+        }
+        
+        
+    });
+    */
+}
+
 function ctrlAPI(req, res, dbClient){
     console.log(`${req.url}, ${req.method}`);
     if(req.method === 'OPTIONS'){
         res.writeHead(200,{
             'Access-Control-Allow-Origin':'http://localhost:3001',
             'Access-Control-Allow-Methods':'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers':'Content-Type, Authorization',
+            'Access-Control-Allow-Headers':'Content-Type, Authorization, withCredentials',
             'Access-Control-Allow-Credentials':'true',
         });
         res.end();
@@ -162,10 +248,11 @@ function ctrlAPI(req, res, dbClient){
     else if(req.url === '/api/users/login' && req.method === 'POST'){
         //login
         accessUser(req, res, dbClient);
+    }else if(req.url === '/api/users/current' && req.method === 'POST'){
+        //get
+        getUser(req, res, dbClient);
     }/*else if(req.url === '/api/users/current' && req.method === 'PATCH'){
         //update
-    }else if(req.url === '/api/users/current' && req.method === 'GET'){
-        //get
     }else if(req.url === '/api/users/logout' && req.method === 'DELETE'){
         //logout
     }else if(req.url === '/api/users/current' && req.method === 'DELETE'){

@@ -77,8 +77,7 @@ Headers:
 Request Body:
 ```json
 {
-    "username":"new",//optional
-    "password":"newpass123"//optional
+    "username":"new"
 }
 ```
 
