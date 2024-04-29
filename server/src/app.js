@@ -3,6 +3,8 @@ const {Client} = require('pg');
 const fs = require('fs');
 const lookup = require('mime-types').lookup;
 const {parse} = require('url');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 const db = (()=>{
     const dbClient = new Client({
@@ -42,11 +44,16 @@ async function createUser(req, res, dbClient){
     const body = await data;
     //console.log(`body : ${body}`);
     const {username, email, password} = JSON.parse(body);
+
+    //bycrpt password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    console.log(`hash:: ${hashedPassword}`);
     
     //console.log(`${username}, ${email}, ${password}`);
     const sql=`INSERT INTO users 
     (username, email, password) VALUES 
-    ('${username}','${email}','${password}')`;
+    ('${username}','${email}','${hashedPassword}')`;
 
     dbClient.query(sql,(err, result)=>{
         try{
@@ -112,42 +119,50 @@ async function accessUser(req, res, dbClient){
 
             const row = result.rows[0];
 
-            if(row.password === password)
-            {
-                //prepare refresh and access token
-                const cookies = {
-                    accessToken:
-                    `accessToken=temp-token-${row.username};`+
-                    `expires=${new Date(Date.now() + 600000).toUTCString()};`+
-                    `HttpOnly;`+
-                    `Path="/";`+
-                    `SameSite=None;`+
-                    `Secure;`
-                    ,
-                    refreshToken:
-                    `refreshToken=refresh-=temp-token-${row.username};`+
-                    `expires=${new Date(Date.now() + 600000).toUTCString()};`+
-                    `HttpOnly;`+
-                    `Path="/";`+
-                    `SameSite=None;`+
-                    `Secure;`
-                }
+            const passMatch = bcrypt.compare(password, row.password);
 
-                //send refresh token using httponly
-                res.writeHead(200,{
-                    'Content-Type':'application/json',
-                    'Access-Control-Allow-Origin':'http://localhost:3001',
-                    'Access-Control-Allow-Credentials':'true',
-                    'Set-Cookie':[cookies.accessToken,cookies.refreshToken]
-                });
-                
-                //send access token
-                res.end(JSON.stringify({
-                    data:{
-                        success:true,
-                    }
-                }));
-            }else throw err;
+            if(!passMatch) throw err;
+
+            //prepare refresh and access token
+            const token = jwt.sign(
+                {"username":`${row.username}`,
+                "email":`${row.email}`},
+                "TEMP-SECRET-KEY",
+                {expiresIn:'600s'}
+            )
+
+            const cookies = {
+                accessToken:
+                `accessToken=${token};`+
+                `expires=${new Date(Date.now() + 600000).toUTCString()};`+
+                `HttpOnly;`+
+                `Path="/";`+
+                `SameSite=None;`+
+                `Secure;`
+                ,
+                refreshToken:
+                `refreshToken=refresh-=temp-token-${row.username};`+
+                `expires=${new Date(Date.now() + 600000).toUTCString()};`+
+                `HttpOnly;`+
+                `Path="/";`+
+                `SameSite=None;`+
+                `Secure;`
+            }
+
+            //send refresh token using httponly
+            res.writeHead(200,{
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Origin':'http://localhost:3001',
+                'Access-Control-Allow-Credentials':'true',
+                'Set-Cookie':[cookies.accessToken,cookies.refreshToken]
+            });
+            
+            //send access token
+            res.end(JSON.stringify({
+                data:{
+                    success:true,
+                }
+            }));
 
         }catch(err){
             console.log(`catch :: ${err}`);
@@ -165,9 +180,53 @@ async function accessUser(req, res, dbClient){
 
 
 async function getUser(req, res, dbClient){
-    //TEMPORARY FOR TEST ONLY, DELETE LATER!!
-    const email = "test123@mail.com"
     
+    let decoded;
+
+    try{
+        //token parse and verify
+        const cookie = req.headers.cookie;
+        if(!cookie) throw err;
+
+        console.log(`header cookie :: ${cookie}`);
+
+        let cookies = cookie.split(";");
+
+        let index, token; 
+        let key = []; 
+        let value = [];
+
+        for (i = 0; i < cookies.length; i++ ){
+            cookies[i] = cookies[i].trim();
+            index = cookies[i].indexOf("=");
+            key[i] = cookies[i].slice(0, index);
+            value[i] = cookies[i].slice(index + 1);
+
+            console.log(`${cookies},${index}`);
+            console.log(`parse :: ${key[i]}:${value[i]} , index:${i}`);
+
+            if(key[i] === 'accessToken')token = value[i];
+        }
+
+        decoded = jwt.verify(token,"TEMP-SECRET-KEY");
+        if(!decoded) throw err;
+
+    }catch(err){
+        console.log(`token verify err :: ${err}`);
+        res.writeHead(400,{
+            'Content-Type':'application/json',
+            'Access-Control-Allow-Origin':'http://localhost:3001'
+        });
+        res.end(JSON.stringify({
+            errors:"Unauthorized"
+        }));
+    }
+
+    //TEMPORARY FOR TEST ONLY, DELETE LATER!!
+    const email = decoded.email;
+    
+    console.log(`jwt :: ${decoded}, ${decoded.email}`);
+
     //sql 
     const sql=`SELECT * FROM 
     users WHERE email='${email}'`;
@@ -175,30 +234,7 @@ async function getUser(req, res, dbClient){
     //query
     dbClient.query(sql,(err, result)=>{
         try{
-            const cookie = req.headers.cookie;
-            console.log(`header cookie :: ${cookie}`);
-
-            let cookies = cookie.split(";");
-
-            let index, token; 
-            let key = []; 
-            let value = [];
-
-            for (i = 0; i < cookies.length; i++ ){
-                cookies[i] = cookies[i].trim();
-                index = cookies[i].indexOf("=");
-                key[i] = cookies[i].slice(0, index);
-                value[i] = cookies[i].slice(index + 1);
-
-                console.log(`${cookies},${index}`);
-                console.log(`parse :: ${key[i]}:${value[i]} , index:${i}`);
-
-                if(key[i] === 'accessToken')token = value[i];
-            }
-
             //validate token
-            if(!token || token != "temp-token-test123") throw err;
-
             if(err | !result.rowCount) throw err;
 
             console.log(`Result : 
@@ -275,7 +311,7 @@ const serverPage = http.createServer((req, res)=>{
     const urlSplited = url.split('/');
     let fileName = urlSplited[urlSplited.length - 1];
     
-    if(fileName === '') {
+    if(fileName === '' || fileName === '/login') {
         fileName = 'index.html';
         url = fileName;
     }

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Link, useNavigate} from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Link, useNavigate, Navigate} from 'react-router-dom'
 import './App.css'
 
 
 let username='';
+
 
 function Reglayout(){
   const[user, setuser] = useState({
@@ -11,7 +12,7 @@ function Reglayout(){
     email:"",
     password:""
   });
-
+  const navigate = useNavigate();
   return (
     <>
       <section className='form_section'>
@@ -33,7 +34,7 @@ function Reglayout(){
           })
           .then(response => response.text()) 
           .then(data => {console.log(data);
-          navigate('/');});
+          navigate('/login');});
         }}>
 
           <label className='username label fn'>
@@ -71,9 +72,7 @@ function LoginLayout(){
     email:"",
     password:""
   });
-
   const navigate = useNavigate();
-
   return (
     <>
       <section className='form_section'>
@@ -130,7 +129,7 @@ function ContentLayout(){
     username:"test",
     email:"test@mail.com"
   });
-  
+  const navigate = useNavigate();
   useEffect(() => {
     fetch("http://localhost:1234/api/users/current", {
       method: "GET",
@@ -181,7 +180,7 @@ function ContentLayout(){
 }
 
 function Editlayout(){
-
+  const navigate = useNavigate();
   return (
     <>
       <section className='form_section'>
@@ -237,7 +236,8 @@ function App() {
   return (
     <BrowserRouter>
         <Routes>
-          <Route path="/" element={<LoginLayout />} />
+          <Route path="/" element={<Navigate to="/login"/>} />
+          <Route path="/login" element={<LoginLayout />} />
           <Route path="/register" element={<Reglayout />} />
           <Route path="/user/edit" element={<Editlayout />} />
           <Route path="/content" element={<ContentLayout />} />
