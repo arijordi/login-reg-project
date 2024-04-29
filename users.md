@@ -55,7 +55,7 @@ Response Body Success:
 ```json
 {
     "data":{
-        "token":"unique token"
+        "success":true
     }
 }
 

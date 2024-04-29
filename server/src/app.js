@@ -115,13 +115,30 @@ async function accessUser(req, res, dbClient){
             if(row.password === password)
             {
                 //prepare refresh and access token
+                const cookies = {
+                    accessToken:
+                    `accessToken=temp-token-${row.username};`+
+                    `expires=${new Date(Date.now() + 600000).toUTCString()};`+
+                    `HttpOnly;`+
+                    `Path="/";`+
+                    `SameSite=None;`+
+                    `Secure;`
+                    ,
+                    refreshToken:
+                    `refreshToken=refresh-=temp-token-${row.username};`+
+                    `expires=${new Date(Date.now() + 600000).toUTCString()};`+
+                    `HttpOnly;`+
+                    `Path="/";`+
+                    `SameSite=None;`+
+                    `Secure;`
+                }
 
                 //send refresh token using httponly
                 res.writeHead(200,{
                     'Content-Type':'application/json',
                     'Access-Control-Allow-Origin':'http://localhost:3001',
                     'Access-Control-Allow-Credentials':'true',
-                    'Set-Cookie':`myCookie=temp-token-${row.username};expires=${new Date(Date.now() + 600000).toUTCString()};HttpOnly;Path="/";SameSite=None;Secure`
+                    'Set-Cookie':[cookies.accessToken,cookies.refreshToken]
                 });
                 
                 //send access token
@@ -158,10 +175,29 @@ async function getUser(req, res, dbClient){
     //query
     dbClient.query(sql,(err, result)=>{
         try{
-            const token = req.headers.cookie;
+            const cookie = req.headers.cookie;
+            console.log(`header cookie :: ${cookie}`);
+
+            let cookies = cookie.split(";");
+
+            let index, token; 
+            let key = []; 
+            let value = [];
+
+            for (i = 0; i < cookies.length; i++ ){
+                cookies[i] = cookies[i].trim();
+                index = cookies[i].indexOf("=");
+                key[i] = cookies[i].slice(0, index);
+                value[i] = cookies[i].slice(index + 1);
+
+                console.log(`${cookies},${index}`);
+                console.log(`parse :: ${key[i]}:${value[i]} , index:${i}`);
+
+                if(key[i] === 'accessToken')token = value[i];
+            }
 
             //validate token
-            if(!token && token != "temp-token-test123") throw err;
+            if(!token || token != "temp-token-test123") throw err;
 
             if(err | !result.rowCount) throw err;
 
