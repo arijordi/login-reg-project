@@ -125,6 +125,8 @@ function LoginLayout(){
   )
 }
 
+let gusername;
+
 function ContentLayout(){
   const[user, setuser] = useState({
     username:"test",
@@ -152,6 +154,8 @@ function ContentLayout(){
           email:dparsed.data.email
         }
       });
+
+      gusername=dparsed.data.username;
       
     });
   }, []);
@@ -181,6 +185,9 @@ function ContentLayout(){
 }
 
 function Editlayout(){
+  const[user, setuser] = useState({
+    username:""
+  });
   const navigate = useNavigate();
   return (
     <>
@@ -190,7 +197,7 @@ function Editlayout(){
           e.preventDefault();  
 
           const body = {
-            username:username
+            username:user.username
           };
           
           fetch("http://localhost:1234/api/users/current", {
@@ -211,8 +218,7 @@ function Editlayout(){
 
           <label className='username label fn'>
             <span>old username:</span>
-            <input type="text" value={username} disabled
-            onChange={(e)=>{setuser(prevState =>{return { ...prevState, username:e.target.value}})}}/>
+            <input type="text" value={gusername} disabled/>
           </label>
 
           <label className='username label fn'>

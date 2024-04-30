@@ -222,7 +222,6 @@ async function getUser(req, res, dbClient){
         }));
     }
 
-    //TEMPORARY FOR TEST ONLY, DELETE LATER!!
     const email = decoded.email;
     
     console.log(`jwt :: ${decoded}, ${decoded.email}`);
@@ -274,12 +273,121 @@ async function getUser(req, res, dbClient){
     })
 }
 
+
+
+async function updateUser(req, res, dbClient){
+   
+    let decoded;
+
+    try{
+        //token parse and verify
+        const cookie = req.headers.cookie;
+        if(!cookie) throw err;
+
+        console.log(`header cookie :: ${cookie}`);
+
+        let cookies = cookie.split(";");
+
+        let index, token; 
+        let key = []; 
+        let value = [];
+
+        for (i = 0; i < cookies.length; i++ ){
+            cookies[i] = cookies[i].trim();
+            index = cookies[i].indexOf("=");
+            key[i] = cookies[i].slice(0, index);
+            value[i] = cookies[i].slice(index + 1);
+
+            console.log(`${cookies},${index}`);
+            console.log(`parse :: ${key[i]}:${value[i]} , index:${i}`);
+
+            if(key[i] === 'accessToken')token = value[i];
+        }
+
+        decoded = jwt.verify(token,"TEMP-SECRET-KEY");
+        if(!decoded) throw err;
+
+    }catch(err){
+        console.log(`token verify err :: ${err}`);
+        res.writeHead(400,{
+            'Content-Type':'application/json',
+            'Access-Control-Allow-Origin':'http://localhost:3001'
+        });
+        res.end(JSON.stringify({
+            errors:"Unauthorized"
+        }));
+    }
+
+
+    const data = new Promise((res, rej)=>{
+        try{
+            let body='';
+            
+            req.on('data', (d)=>{
+                body += d.toString();
+            });
+
+            req.on('end',()=>{
+                res(body);
+            });
+        }catch(err){
+            rej(err);
+        }
+    });
+
+    const body = await data;
+    const {username} = JSON.parse(body);
+
+
+    const email = decoded.email;
+    
+    console.log(`jwt :: ${decoded}, ${decoded.email}`);
+
+    //sql insert new username where email is decoded email
+    const sql=`UPDATE users SET username='${username}' 
+    WHERE email='${email}'`;
+
+    //query
+    dbClient.query(sql,(err, result)=>{
+        try{
+            if(err | !result.rowCount) throw err;
+
+            console.log(`Result :${JSON.stringify(result)}`);
+            
+            //send token using httponly cookie
+            res.writeHead(200,{
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Origin':'http://localhost:3001',
+                'Access-Control-Allow-Credentials':'true',
+            });
+            
+            //send jwt
+            res.end(JSON.stringify({
+                data:{
+                    username:username
+                }
+            }));
+
+        }catch(err){
+            console.log(`catch :: ${err}`);
+            res.writeHead(400,{
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Origin':'http://localhost:3001'
+            });
+            res.end(JSON.stringify({
+                errors:"something wrong please try again!"
+            }));
+        }
+    })
+}
+
+
 function ctrlAPI(req, res, dbClient){
     console.log(`${req.url}, ${req.method}`);
     if(req.method === 'OPTIONS'){
         res.writeHead(200,{
             'Access-Control-Allow-Origin':'http://localhost:3001',
-            'Access-Control-Allow-Methods':'GET, POST, OPTIONS',
+            'Access-Control-Allow-Methods':'GET, POST, OPTIONS, PATCH, DELETE',
             'Access-Control-Allow-Headers':'Content-Type, Authorization, withCredentials',
             'Access-Control-Allow-Credentials':'true',
         });
@@ -290,9 +398,10 @@ function ctrlAPI(req, res, dbClient){
         accessUser(req, res, dbClient);
     }else if(req.url === '/api/users/current' && req.method === 'GET'){
         getUser(req, res, dbClient);
-    }/*else if(req.url === '/api/users/current' && req.method === 'PATCH'){
+    }else if(req.url === '/api/users/current' && req.method === 'PATCH'){
         //update
-    }else if(req.url === '/api/users/logout' && req.method === 'DELETE'){
+        updateUser(req, res, dbClient);
+    }/*else if(req.url === '/api/users/logout' && req.method === 'DELETE'){
         //logout
     }else if(req.url === '/api/users/current' && req.method === 'DELETE'){
         //delete
