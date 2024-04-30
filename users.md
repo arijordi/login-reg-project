@@ -55,7 +55,7 @@ Response Body Success:
 ```json
 {
     "data":{
-        "success":true
+        "login":true
     }
 }
 
@@ -128,7 +128,9 @@ Endpoint : DELETE /api/user/logout
 Response Body Success:
 ```json
 {
-    "data":"Logout success"
+    "data":{
+        "logout":true
+    }
 }
 ```
 
@@ -149,7 +151,9 @@ Headers :
 Response Body Success:
 ```json
 {
-    "data":"Delete success"
+    "data":{
+        "delete":true
+    }
 }
 ```
 

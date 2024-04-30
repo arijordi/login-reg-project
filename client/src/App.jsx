@@ -125,7 +125,32 @@ function LoginLayout(){
   )
 }
 
-let gusername;
+/*
+function gusername (uname){
+  const[user, setuser] = useState('');
+
+  if(uname)setuser(uname);
+
+  return user;
+}*/
+
+function logout(navigate){
+  fetch("http://localhost:1234/api/users/logout", {
+      method: "DELETE",
+      mode:"cors",
+      credentials:"include",
+      headers: {
+        "Content-Type": "application/json",
+        "withCredentials":"true"
+      },
+    })
+    .then(response => response.text()) 
+    .then(d => {
+      const dparsed = JSON.parse(d);
+      console.log(JSON.stringify(dparsed));
+      navigate('/');
+    });
+}
 
 function ContentLayout(){
   const[user, setuser] = useState({
@@ -155,7 +180,7 @@ function ContentLayout(){
         }
       });
 
-      gusername=dparsed.data.username;
+      //gusername(dparsed.data.username);
       
     });
   }, []);
@@ -175,8 +200,15 @@ function ContentLayout(){
               <button>edit user</button>
             </Link>
             
-            <button className='edit'>delete user</button>
-            <button className='edit'>log out</button>
+            <button onClick={(e)=>{
+              e.preventDefault();
+              navigate('/delete');
+            }} className='edit'>delete user</button>
+
+            <button onClick={(e)=>{
+              e.preventDefault();
+              logout(navigate);
+            }} className='edit'>log out</button>
           </div>
         </div>
       </section>
@@ -218,13 +250,69 @@ function Editlayout(){
 
           <label className='username label fn'>
             <span>old username:</span>
-            <input type="text" value={gusername} disabled/>
+            <input type="text" value='' disabled/>
           </label>
 
           <label className='username label fn'>
             <span>new username:</span>
             <input type="text" placeholder='new username' required 
             onChange={(e)=>{setuser(prevState =>{return { ...prevState, username:e.target.value}})}}/>
+          </label>
+
+          <button type='submit' className='fn'>
+            Submit
+          </button>
+        </form>
+        <div className='edit_nav'>
+          <Link className='fn' to='/content'>back</Link>
+        </div>
+      </section>
+    </>
+  )
+}
+
+
+
+function DeleteLayout(){
+  const[user, setuser] = useState({
+    password:""
+  });
+  const navigate = useNavigate();
+  return (
+    <>
+      <section className='form_section'>
+        
+        <form onSubmit={(e)=>{
+          e.preventDefault();  
+
+          const body = {
+            password:user.password
+          };
+          
+          fetch("http://localhost:1234/api/users/current", {
+              method: "DELETE",
+              credentials:"include",
+              headers: {
+                "Content-Type": "application/json",
+                "withCredentials":"true",
+              },
+              body: JSON.stringify(body)
+          })
+          .then(response => response.text()) 
+          .then(data => {
+            console.log(data);
+            navigate('/');
+          });
+          }}>
+
+          <label className='label fsh'>
+            <span>DELETE CURRENT USER</span>
+          </label>
+
+          <label className='label fn'>
+            <span>password:</span>
+            <input type="text" placeholder='password' required 
+            onChange={(e)=>{setuser(prevState =>{return { ...prevState, password:e.target.value}})}}/>
           </label>
 
           <button type='submit' className='fn'>
@@ -248,6 +336,7 @@ function App() {
           <Route path="/register" element={<Reglayout />} />
           <Route path="/edit" element={<Editlayout />} />
           <Route path="/content" element={<ContentLayout />} />
+          <Route path="/delete" element={<DeleteLayout />} />
        </Routes>
     </BrowserRouter>
   )

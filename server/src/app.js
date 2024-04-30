@@ -141,7 +141,7 @@ async function accessUser(req, res, dbClient){
                 `Secure;`
                 ,
                 refreshToken:
-                `refreshToken=refresh-=temp-token-${row.username};`+
+                `refreshToken=refresh-=temp-token;`+
                 `expires=${new Date(Date.now() + 600000).toUTCString()};`+
                 `HttpOnly;`+
                 `Path="/";`+
@@ -160,7 +160,7 @@ async function accessUser(req, res, dbClient){
             //send access token
             res.end(JSON.stringify({
                 data:{
-                    success:true,
+                    login:true,
                 }
             }));
 
@@ -274,7 +274,6 @@ async function getUser(req, res, dbClient){
 }
 
 
-
 async function updateUser(req, res, dbClient){
    
     let decoded;
@@ -382,6 +381,244 @@ async function updateUser(req, res, dbClient){
 }
 
 
+
+async function logoutUser(req, res){
+   
+    let decoded;
+
+    try{
+        //token parse and verify
+        const cookie = req.headers.cookie;
+        if(!cookie) throw err;
+
+        console.log(`header cookie :: ${cookie}`);
+
+        let cookies = cookie.split(";");
+
+        let index, token; 
+        let key = []; 
+        let value = [];
+
+        for (i = 0; i < cookies.length; i++ ){
+            cookies[i] = cookies[i].trim();
+            index = cookies[i].indexOf("=");
+            key[i] = cookies[i].slice(0, index);
+            value[i] = cookies[i].slice(index + 1);
+
+            console.log(`${cookies},${index}`);
+            console.log(`parse :: ${key[i]}:${value[i]} , index:${i}`);
+
+            if(key[i] === 'accessToken')token = value[i];
+        }
+
+        decoded = jwt.verify(token,"TEMP-SECRET-KEY");
+
+        console.log(`jwt :: ${decoded}, ${decoded.email}`);
+
+        if(!decoded) throw err;
+
+        const delCookies = {
+            accessToken:
+            `accessToken=${token};`+
+            `expires=Thu, 01 jan 1970 00:00:00 GMT;`+
+            `HttpOnly;`+
+            `Path="/";`+
+            `SameSite=None;`+
+            `Secure;`+
+            `MaxAge=-1;`
+            ,
+            refreshToken:
+            `refreshToken=refresh-=temp-token;`+
+            `expires=Thu, 01 jan 1970 00:00:00 GMT;`+
+            `HttpOnly;`+
+            `Path="/";`+
+            `SameSite=None;`+
+            `Secure;`+
+            `MaxAge=-1;`
+        }
+
+        res.writeHead(200,{
+            'Content-Type':'application/json',
+            'Access-Control-Allow-Origin':'http://localhost:3001',
+            'Access-Control-Allow-Credentials':'true',
+            'Set-Cookie':[delCookies.accessToken,delCookies.refreshToken]
+        });
+        
+
+        res.end(JSON.stringify({
+            data:{
+                logout:true
+            }
+        }));
+
+    }catch(err){
+        console.log(`token verify err :: ${err}`);
+        res.writeHead(400,{
+            'Content-Type':'application/json',
+            'Access-Control-Allow-Origin':'http://localhost:3001'
+        });
+        res.end(JSON.stringify({
+            errors:"Unauthorized"
+        }));
+    }
+}
+
+
+
+
+
+async function deleteUser(req, res, dbClient){
+
+    let decoded,token;
+
+    try{
+        //token parse and verify
+        const cookie = req.headers.cookie;
+        if(!cookie) throw err;
+
+        console.log(`header cookie :: ${cookie}`);
+
+        let cookies = cookie.split(";");
+
+        let index; 
+        let key = []; 
+        let value = [];
+
+        for (i = 0; i < cookies.length; i++ ){
+            cookies[i] = cookies[i].trim();
+            index = cookies[i].indexOf("=");
+            key[i] = cookies[i].slice(0, index);
+            value[i] = cookies[i].slice(index + 1);
+
+            console.log(`${cookies},${index}`);
+            console.log(`parse :: ${key[i]}:${value[i]} , index:${i}`);
+
+            if(key[i] === 'accessToken')token = value[i];
+        }
+
+        decoded = jwt.verify(token,"TEMP-SECRET-KEY");
+        if(!decoded) throw err;
+
+    }catch(err){
+        console.log(`token verify err :: ${err}`);
+        res.writeHead(400,{
+            'Content-Type':'application/json',
+            'Access-Control-Allow-Origin':'http://localhost:3001'
+        });
+        res.end(JSON.stringify({
+            errors:"Unauthorized"
+        }));
+    }
+
+    const email = decoded.email;
+    console.log(`jwt :: ${decoded}, ${decoded.email}`);
+   
+    const data = new Promise((res, rej)=>{
+        try{
+            let body='';
+            
+            req.on('data', (d)=>{
+                body += d.toString();
+            });
+
+            req.on('end',()=>{
+                res(body);
+            });
+        }catch(err){
+            rej(err);
+        }
+    });
+
+    const body = await data;
+    const {password} = JSON.parse(body);
+
+    const sqlpass=`SELECT * FROM 
+    users WHERE email='${email}'`;
+
+    dbClient.query(sqlpass,(err, result)=>{
+        try{
+            if(err | !result.rowCount) throw err;
+
+            console.log(`Result : 
+            ${JSON.stringify(result.rowCount)}`);
+
+            const row = result.rows[0];
+
+            const passMatch = bcrypt.compare(password, row.password);
+
+            if(!passMatch) throw err;
+        }catch(err){
+            console.log(`catch :: ${err}`);
+            res.writeHead(400,{
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Origin':'http://localhost:3001'
+            });
+            res.end(JSON.stringify({
+                errors:"Unauthorized"
+            }));
+        }
+    })
+
+    //delete sql
+    const sql=`DELETE FROM users 
+    WHERE email='${email}'`;
+
+    dbClient.query(sql,(err, result)=>{
+        try{
+            if(err)throw err;
+
+            console.log(`DELETE :: ${JSON.stringify(result)}`)
+
+            const delCookies = {
+                accessToken:
+                `accessToken=${token};`+
+                `expires=Thu, 01 jan 1970 00:00:00 GMT;`+
+                `HttpOnly;`+
+                `Path="/";`+
+                `SameSite=None;`+
+                `Secure;`+
+                `MaxAge=-1;`
+                ,
+                refreshToken:
+                `refreshToken=refresh-=temp-token;`+
+                `expires=Thu, 01 jan 1970 00:00:00 GMT;`+
+                `HttpOnly;`+
+                `Path="/";`+
+                `SameSite=None;`+
+                `Secure;`+
+                `MaxAge=-1;`
+            }
+    
+            res.writeHead(200,{
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Origin':'http://localhost:3001',
+                'Access-Control-Allow-Credentials':'true',
+                'Set-Cookie':[delCookies.accessToken,delCookies.refreshToken]
+            });
+
+            res.end(JSON.stringify({
+                data:{
+                    delete:true
+                }
+            }));
+
+        }catch(err){
+            console.log(`catch :: ${err}`);
+            res.writeHead(400,{
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Origin':'http://localhost:3001'
+            });
+            res.end(JSON.stringify({
+                errors:"Unauthorized"
+            }));
+        }
+        
+    });
+}
+
+
+
+
 function ctrlAPI(req, res, dbClient){
     console.log(`${req.url}, ${req.method}`);
     if(req.method === 'OPTIONS'){
@@ -399,13 +636,12 @@ function ctrlAPI(req, res, dbClient){
     }else if(req.url === '/api/users/current' && req.method === 'GET'){
         getUser(req, res, dbClient);
     }else if(req.url === '/api/users/current' && req.method === 'PATCH'){
-        //update
         updateUser(req, res, dbClient);
-    }/*else if(req.url === '/api/users/logout' && req.method === 'DELETE'){
-        //logout
+    }else if(req.url === '/api/users/logout' && req.method === 'DELETE'){
+        logoutUser(req, res);
     }else if(req.url === '/api/users/current' && req.method === 'DELETE'){
-        //delete
-    }*/
+        deleteUser(req, res, dbClient);
+    }
     else {
         res.writeHead(404, {'Content-Type':'application/json'});
         res.end(JSON.stringify(
@@ -429,6 +665,7 @@ const serverPage = http.createServer((req, res)=>{
         'register',
         'content',
         'edit',
+        'delete',
     ];
 
     if(filenames.includes(fileName)) {
