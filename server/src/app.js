@@ -309,9 +309,20 @@ const serverPage = http.createServer((req, res)=>{
     let url = parse(req.url,true);
     url = url.path.replace(/^\/+|\/+$/g, '');
     const urlSplited = url.split('/');
-    let fileName = urlSplited[urlSplited.length - 1];
+    let fileName = urlSplited[urlSplited.length - 1].trim();
+
+    console.log(`url :: ${req.url}, filename :: ${fileName}`);
     
-    if(fileName === '' || fileName === '/login') {
+    const filenames = 
+    [
+        '',
+        'login',
+        'register',
+        'content',
+        'edit',
+    ];
+
+    if(filenames.includes(fileName)) {
         fileName = 'index.html';
         url = fileName;
     }

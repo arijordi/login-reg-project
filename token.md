@@ -3,8 +3,7 @@ Payload :
 
 ```json
 {
-
     "username":"ari jordi",
-    "email":"ari@mail.com",
+    "email":"ari@mail.com"
 }
 ```

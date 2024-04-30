@@ -13,6 +13,7 @@ function Reglayout(){
     password:""
   });
   const navigate = useNavigate();
+
   return (
     <>
       <section className='form_section'>
@@ -166,7 +167,7 @@ function ContentLayout(){
             <p>email : {user.email}</p>
           </div>
           <div className='conf'>
-            <Link className='link edit fn' to='/user/edit'>
+            <Link className='link edit fn' to='/edit'>
               <button>edit user</button>
             </Link>
             
@@ -239,7 +240,7 @@ function App() {
           <Route path="/" element={<Navigate to="/login"/>} />
           <Route path="/login" element={<LoginLayout />} />
           <Route path="/register" element={<Reglayout />} />
-          <Route path="/user/edit" element={<Editlayout />} />
+          <Route path="/edit" element={<Editlayout />} />
           <Route path="/content" element={<ContentLayout />} />
        </Routes>
     </BrowserRouter>
