@@ -30,7 +30,7 @@ Response Body Error:
 
 ```json
 {
-    "errors":"something wrong please try again!"
+    "errors":"username or email already exist!"
 }
 ```
 

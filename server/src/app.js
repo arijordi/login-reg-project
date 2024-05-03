@@ -60,16 +60,19 @@ const serverAPI = http.createServer((req, res)=>{
     let tLimit;
 
     tLimit = setTimeout(()=>{
-        console.log(`DB connect took long... Fail!`);
+        console.error(`DB connect took long... Fail!`);
+
         clearTimeout(tLimit);
-        res.writeHead(404, {'Content-Type':'application/json'});
+
+        res.writeHead(500, {'Content-Type':'application/json'});
         res.end(JSON.stringify(
-            {message:'something wrong'}
+            {message:'something wrong, try again later!'}
         ));
     }, 3000);
    
     if(db){
         clearTimeout(tLimit);
+
         const dbClient = db;
         
         ctrlAPI(req, res, dbClient);

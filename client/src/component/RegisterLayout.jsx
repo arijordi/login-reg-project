@@ -9,7 +9,12 @@ async function register(url, method, body, todo){
         },
         body: JSON.stringify(body)
     })
-    .then(response => response.text()) 
+    .then(response => {
+      return{
+        status:response.status,
+        promise:response.json()
+      }
+    }) 
     .then(data => {todo(data)});
 }
 
@@ -25,7 +30,8 @@ function RegisterLayout(){
         email:user.email,
         password:user.password
     };
-  
+    const[display, setdisplay] = useState("none");
+    
     return (
       <>
         <section className='form_section'>
@@ -35,8 +41,15 @@ function RegisterLayout(){
                     "http://localhost:1234/api/users",
                     "POST",
                     body,
-                    (()=>{
-                        navigate("/");
+                    ((obj)=>{
+                        console.log(`status:: ${obj.status}`);
+                        /*obj.promise.then((res)=>{
+                          console.log(`status:: ${res.data.email}`);
+                        })*/
+                        if(obj.status == 200)
+                          navigate("/");
+                        else 
+                          setdisplay("block");
                     })
                 );
             }}>
@@ -61,6 +74,10 @@ function RegisterLayout(){
             <button type='submit' className='fn'>
               register
             </button>
+
+            <label style={{display:display}} className='error label fn'>
+              <span>username or email already exist!</span>
+            </label>
           </form>
           <div className='reg_nav'>
             <Link className='fn' to='/'>login</Link>

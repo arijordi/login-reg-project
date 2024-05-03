@@ -14,8 +14,8 @@ async function createUser(req, res, dbClient){
 
     dbClient.query(sql,(err)=>{
         try{
-            if(err) throw err;
-        
+            if(err) throw(new Error('username or email already exist!'));
+
             res.writeHead(200,{
                 'Content-Type':'application/json',
                 'Access-Control-Allow-Origin':'http://localhost:3001'
@@ -28,13 +28,14 @@ async function createUser(req, res, dbClient){
                 }
             }));
         }catch(err){
+            console.log(err);
             res.writeHead(400,{
                 'Content-Type':'application/json',
                 'Access-Control-Allow-Origin':'http://localhost:3001'
             });
 
             res.end(JSON.stringify({
-                errors:"something wrong please try again!"
+                errors:"username or email already exist!"
             }));
         }
         
