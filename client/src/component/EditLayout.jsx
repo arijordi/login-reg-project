@@ -12,7 +12,12 @@ function edit(url,method,body,todo){
         },
         body: JSON.stringify(body)
     })
-    .then(response => response.text()) 
+    .then(response => {
+      return{
+        status:response.status,
+        promise:response.json()
+      }
+    }) 
     .then(data => {todo(data)});
 }
 
@@ -24,6 +29,7 @@ function EditLayout(){
     const body = {
         username:user.username
     };
+    const[display, setdisplay] = useState("none");
 
     return (
       <>
@@ -34,8 +40,11 @@ function EditLayout(){
                 "http://localhost:1234/api/users/current",
                 "PATCH",
                 body,
-                (()=>{
+                ((obj)=>{
+                  if(obj.status == 200)
                     navigate("/content");
+                  else 
+                    setdisplay("block");
                 })
             );
           }}>
@@ -53,6 +62,10 @@ function EditLayout(){
             <button type='submit' className='fn'>
               Submit
             </button>
+
+            <label style={{display:display}} className='error label fn'>
+              <span>username already exist!</span>
+            </label>
           </form>
           <div className='edit_nav'>
             <Link className='fn' to='/content'>back</Link>

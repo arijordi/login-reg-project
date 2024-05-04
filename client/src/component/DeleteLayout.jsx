@@ -12,10 +12,14 @@ function del(url,method,body,todo){
         },
         body: JSON.stringify(body)
     })
-    .then(response => response.text()) 
+    .then(response => {
+      return{
+        status:response.status,
+        promise:response.json()
+      }
+    }) 
     .then(data => {todo(data)});
 }
-
 
 function DeleteLayout(){
     const[user, setuser] = useState({
@@ -25,6 +29,8 @@ function DeleteLayout(){
     const body = {
         password:user.password
     };
+    const[display, setdisplay] = useState("none");
+
 
     return (
       <>
@@ -35,8 +41,11 @@ function DeleteLayout(){
                     "http://localhost:1234/api/users/current",
                     "DELETE",
                     body,
-                    (()=>{
+                    ((obj)=>{
+                      if(obj.status == 200)
                         navigate("/");
+                      else 
+                        setdisplay("block");
                     })
                 );
             }}>
@@ -51,6 +60,10 @@ function DeleteLayout(){
             </label>
   
             <button type='submit' className='fn'>Submit</button>
+            
+            <label style={{display:display}} className='error label fn'>
+              <span>password wrong!</span>
+            </label>
           </form>
           <div className='edit_nav'>
             <Link className='fn' to='/content'>back</Link>

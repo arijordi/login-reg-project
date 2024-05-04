@@ -12,7 +12,12 @@ function login(url,method,body,todo){
         },
         body: JSON.stringify(body)
     })
-    .then(response => response.text()) 
+    .then(response => {
+      return{
+        status:response.status,
+        promise:response.json()
+      }
+    }) 
     .then(data => {todo(data)});
 }
 
@@ -26,6 +31,7 @@ function LoginLayout(){
         email:user.email,
         password:user.password
     }
+    const[display, setdisplay] = useState("none");
 
     return (
       <>
@@ -36,8 +42,11 @@ function LoginLayout(){
                 "http://localhost:1234/api/users/login",
                 "POST",
                 body,
-                (()=>{
+                ((obj)=>{
+                  if(obj.status == 200)
                     navigate("/content");
+                  else 
+                    setdisplay("block");
                 })
             );
             
@@ -55,6 +64,10 @@ function LoginLayout(){
             </label>
   
             <button type='submit' className='fn'>Login</button>
+          
+            <label style={{display:display}} className='error label fn'>
+              <span>user not exist!</span>
+            </label>
           </form>
           <div className='reg_nav'>
             <Link className='fn' to='/register'>register</Link>

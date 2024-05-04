@@ -18,7 +18,8 @@ async function createUser(req, res, dbClient){
 
             res.writeHead(200,{
                 'Content-Type':'application/json',
-                'Access-Control-Allow-Origin':'http://localhost:3001'
+                'Access-Control-Allow-Origin':'http://localhost:3001',
+                'Access-Control-Allow-Credentials':'true',
             });
 
             res.end(JSON.stringify({
@@ -28,10 +29,10 @@ async function createUser(req, res, dbClient){
                 }
             }));
         }catch(err){
-            console.log(err);
             res.writeHead(400,{
                 'Content-Type':'application/json',
-                'Access-Control-Allow-Origin':'http://localhost:3001'
+                'Access-Control-Allow-Origin':'http://localhost:3001',
+                'Access-Control-Allow-Credentials':'true',
             });
 
             res.end(JSON.stringify({
@@ -48,14 +49,14 @@ async function accessUser(req, res, dbClient){
     const sql=`SELECT * FROM 
     users WHERE email='${email}'`;
 
-    dbClient.query(sql,(err, result)=>{
+    dbClient.query(sql,async(err, result)=>{
         try{
-            if(err || !result.rowCount) throw err;
+            if(err || !result.rowCount) throw(new Error('user email not exist!'));
 
             const row = result.rows[0];
-            const passMatch = bcrypt.compare(password, row.password);
-
-            if(!passMatch) throw err;
+            const passMatch = await bcrypt.compare(password, row.password);
+            
+            if(!passMatch) throw(new Error('password not match!'));
 
             const token = jwt.sign(
                 {"username":`${row.username}`,
@@ -97,7 +98,8 @@ async function accessUser(req, res, dbClient){
         }catch(err){
             res.writeHead(400,{
                 'Content-Type':'application/json',
-                'Access-Control-Allow-Origin':'http://localhost:3001'
+                'Access-Control-Allow-Origin':'http://localhost:3001',
+                'Access-Control-Allow-Credentials':'true',
             });
 
             res.end(JSON.stringify({
@@ -113,17 +115,18 @@ async function getUser(req, res, dbClient){
     try{
         const cookie = req.headers.cookie;
        
-        if(!cookie) throw err;
+        if(!cookie) throw(new Error('cookie not found!'));
 
         const token = cookieParser(cookie).get("accessToken");
 
         decoded = jwt.verify(token,"TEMP-SECRET-KEY");
 
-        if(!decoded) throw err;
+        if(!decoded) throw(new Error('cookie not valid!'));
     }catch(err){
         res.writeHead(400,{
             'Content-Type':'application/json',
-            'Access-Control-Allow-Origin':'http://localhost:3001'
+            'Access-Control-Allow-Origin':'http://localhost:3001',
+            'Access-Control-Allow-Credentials':'true',
         });
 
         res.end(JSON.stringify({
@@ -137,7 +140,7 @@ async function getUser(req, res, dbClient){
 
     dbClient.query(sql,(err, result)=>{
         try{
-            if(err | !result.rowCount) throw err;
+            if(err || !result.rowCount) throw(new Error('user email not exist!'));
 
             const row = result.rows[0];
 
@@ -156,7 +159,8 @@ async function getUser(req, res, dbClient){
         }catch(err){
             res.writeHead(400,{
                 'Content-Type':'application/json',
-                'Access-Control-Allow-Origin':'http://localhost:3001'
+                'Access-Control-Allow-Origin':'http://localhost:3001',
+                'Access-Control-Allow-Credentials':'true',
             });
 
             res.end(JSON.stringify({
@@ -171,18 +175,19 @@ async function updateUser(req, res, dbClient){
 
     try{
         const cookie = req.headers.cookie;
-
-        if(!cookie) throw err;
+       
+        if(!cookie) throw(new Error('cookie not found!'));
 
         const token = cookieParser(cookie).get("accessToken");
 
         decoded = jwt.verify(token,"TEMP-SECRET-KEY");
 
-        if(!decoded) throw err;
+        if(!decoded) throw(new Error('cookie not valid!'));
     }catch(err){
         res.writeHead(400,{
             'Content-Type':'application/json',
-            'Access-Control-Allow-Origin':'http://localhost:3001'
+            'Access-Control-Allow-Origin':'http://localhost:3001',
+            'Access-Control-Allow-Credentials':'true',
         });
 
         res.end(JSON.stringify({
@@ -198,7 +203,7 @@ async function updateUser(req, res, dbClient){
 
     dbClient.query(sql,(err, result)=>{
         try{
-            if(err | !result.rowCount) throw err;
+            if(err || !result.rowCount) throw(new Error('username already exist'));
 
             res.writeHead(200,{
                 'Content-Type':'application/json',
@@ -214,7 +219,8 @@ async function updateUser(req, res, dbClient){
         }catch(err){
             res.writeHead(400,{
                 'Content-Type':'application/json',
-                'Access-Control-Allow-Origin':'http://localhost:3001'
+                'Access-Control-Allow-Origin':'http://localhost:3001',
+                'Access-Control-Allow-Credentials':'true',
             });
 
             res.end(JSON.stringify({
@@ -229,14 +235,14 @@ async function logoutUser(req, res){
 
     try{
         const cookie = req.headers.cookie;
-
-        if(!cookie) throw err;
+       
+        if(!cookie) throw(new Error('cookie not found!'));
 
         const token = cookieParser(cookie).get("accessToken");
 
         decoded = jwt.verify(token,"TEMP-SECRET-KEY");
 
-        if(!decoded) throw err;
+        if(!decoded) throw(new Error('cookie not valid!'));
 
         const delCookies = {
             accessToken:
@@ -274,7 +280,8 @@ async function logoutUser(req, res){
     }catch(err){
         res.writeHead(400,{
             'Content-Type':'application/json',
-            'Access-Control-Allow-Origin':'http://localhost:3001'
+            'Access-Control-Allow-Origin':'http://localhost:3001',
+            'Access-Control-Allow-Credentials':'true',
         });
 
         res.end(JSON.stringify({
@@ -288,19 +295,19 @@ async function deleteUser(req, res, dbClient){
     
     try{
         const cookie = req.headers.cookie;
+       
+        if(!cookie) throw(new Error('cookie not found!'));
 
-        if(!cookie) throw err;
-
-        token = cookieParser(cookie).get("accessToken");
+        const token = cookieParser(cookie).get("accessToken");
 
         decoded = jwt.verify(token,"TEMP-SECRET-KEY");
 
-        if(!decoded) throw err;
-
+        if(!decoded) throw(new Error('cookie not valid!'));
     }catch(err){
         res.writeHead(400,{
             'Content-Type':'application/json',
-            'Access-Control-Allow-Origin':'http://localhost:3001'
+            'Access-Control-Allow-Origin':'http://localhost:3001',
+            'Access-Control-Allow-Credentials':'true',
         });
 
         res.end(JSON.stringify({
@@ -314,18 +321,60 @@ async function deleteUser(req, res, dbClient){
     const sqlpass=`SELECT * FROM 
     users WHERE email='${email}'`;
 
-    dbClient.query(sqlpass,(err, result)=>{
+    dbClient.query(sqlpass,async(err, result)=>{
         try{
-            if(err | !result.rowCount) throw err;
+            if(err || !result.rowCount) throw(new Error('email not found!'));
 
             const row = result.rows[0];
-            const passMatch = bcrypt.compare(password, row.password);
+            const passMatch = await bcrypt.compare(password, row.password);
 
-            if(!passMatch) throw err;
+            if(!passMatch) throw(new Error('password not match!'));
+            
+            const sql=`DELETE FROM users 
+            WHERE email='${email}'`;
+
+            dbClient.query(sql,(err)=>{
+                if(err)throw(new Error('user email not exist!'));
+
+                const delCookies = {
+                    accessToken:
+                    `accessToken=${token};`+
+                    `expires=Thu, 01 jan 1970 00:00:00 GMT;`+
+                    `HttpOnly;`+
+                    `Path="/";`+
+                    `SameSite=None;`+
+                    `Secure;`+
+                    `MaxAge=-1;`
+                    ,
+                    refreshToken:
+                    `refreshToken=refresh-=temp-token;`+
+                    `expires=Thu, 01 jan 1970 00:00:00 GMT;`+
+                    `HttpOnly;`+
+                    `Path="/";`+
+                    `SameSite=None;`+
+                    `Secure;`+
+                    `MaxAge=-1;`
+                }
+        
+                res.writeHead(200,{
+                    'Content-Type':'application/json',
+                    'Access-Control-Allow-Origin':'http://localhost:3001',
+                    'Access-Control-Allow-Credentials':'true',
+                    'Set-Cookie':[delCookies.accessToken,delCookies.refreshToken]
+                });
+
+                res.end(JSON.stringify({
+                    data:{
+                        delete:true
+                    }
+                }));
+            })
         }catch(err){
+            console.log(err);
             res.writeHead(400,{
                 'Content-Type':'application/json',
-                'Access-Control-Allow-Origin':'http://localhost:3001'
+                'Access-Control-Allow-Origin':'http://localhost:3001',
+                'Access-Control-Allow-Credentials':'true',
             });
 
             res.end(JSON.stringify({
@@ -333,57 +382,6 @@ async function deleteUser(req, res, dbClient){
             }));
         }
     })
-
-    const sql=`DELETE FROM users 
-    WHERE email='${email}'`;
-
-    dbClient.query(sql,(err)=>{
-        try{
-            if(err)throw err;
-
-            const delCookies = {
-                accessToken:
-                `accessToken=${token};`+
-                `expires=Thu, 01 jan 1970 00:00:00 GMT;`+
-                `HttpOnly;`+
-                `Path="/";`+
-                `SameSite=None;`+
-                `Secure;`+
-                `MaxAge=-1;`
-                ,
-                refreshToken:
-                `refreshToken=refresh-=temp-token;`+
-                `expires=Thu, 01 jan 1970 00:00:00 GMT;`+
-                `HttpOnly;`+
-                `Path="/";`+
-                `SameSite=None;`+
-                `Secure;`+
-                `MaxAge=-1;`
-            }
-    
-            res.writeHead(200,{
-                'Content-Type':'application/json',
-                'Access-Control-Allow-Origin':'http://localhost:3001',
-                'Access-Control-Allow-Credentials':'true',
-                'Set-Cookie':[delCookies.accessToken,delCookies.refreshToken]
-            });
-
-            res.end(JSON.stringify({
-                data:{
-                    delete:true
-                }
-            }));
-        }catch(err){
-            res.writeHead(400,{
-                'Content-Type':'application/json',
-                'Access-Control-Allow-Origin':'http://localhost:3001'
-            });
-
-            res.end(JSON.stringify({
-                errors:"Unauthorized"
-            }));
-        }
-    });
 }
 
 module.exports = {

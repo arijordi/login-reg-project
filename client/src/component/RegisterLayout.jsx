@@ -42,7 +42,6 @@ function RegisterLayout(){
                     "POST",
                     body,
                     ((obj)=>{
-                        console.log(`status:: ${obj.status}`);
                         /*obj.promise.then((res)=>{
                           console.log(`status:: ${res.data.email}`);
                         })*/

@@ -11,7 +11,12 @@ async function getuser(url, method, todo){
             "withCredentials":"true"
         },
     })
-    .then(response => response.text()) 
+    .then(response => {
+      return{
+        status:response.status,
+        promise:response.json()
+      }
+    }) 
     .then(data => {todo(data)})
 }
 
@@ -40,16 +45,17 @@ async function logout(todo){
         getuser(
             "http://localhost:1234/api/users/current", 
             "GET",
-            ((data)=>{
-                const dparsed = JSON.parse(data);
-
-                setuser(prevState =>{
+            ((obj)=>{
+                obj.promise.then((res)=>{
+                  //console.log(`status:: ${res.data.email}`);
+                  setuser(prevState =>{
                     return { 
                     ...prevState, 
-                    username:dparsed.data.username, 
-                    email:dparsed.data.email
+                    username:res.data.username, 
+                    email:res.data.email
                     }
-                });
+                  });
+                })
             })
         );
     }, []);
